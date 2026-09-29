@@ -27,7 +27,7 @@ LiveTalking (:8010) ──/offer WebRTC──→ 数字人音视频流（GPU 推
 | `src/probe_broadcast.py` | 转写广播探针，验证 topic 与到达性 |
 | `src/lt_loopback.py` | 服务器环回 WebRTC 客户端，抓数字人真实帧 |
 | `web/server.js` | token 发放 + 房间/dispatch 创建 + 静态托管(:3210)，按 Host 头推导公网 wss |
-| `web/index.html` | 三角色共用页面，`?name=xxx` 切换身份 |
+| `web/index.html` | 多角色共用页面，`?name=xxx` 切换身份；**发送按角色分流**：客户 → RPC 问 AI，其他角色 → `sendText` 广播（人工接管外呼 / 质检发言） |
 | `deploy/` | 云主机远程执行器与部署脚本（凭据走环境变量） |
 | `docs/` | 使用手册（云端实测）+ 本地复现指南 |
 | `evidence/` | 实测截图与 GPU 取证帧 |
@@ -51,7 +51,7 @@ cd web && npm install && node server.js
 ```
 
 打开 `http://localhost:3210/?name=customer`，点「开始服务」即可提问。
-再开一个窗口用 `?name=human-seat` 加入，即可实时旁听客户与 AI 的完整问答。
+再开一个窗口用 `?name=human-seat` 加入：既能实时旁听客户与 AI 的完整问答，也能**直接对房间内所有人说话**（人工接管外呼）。第三个窗口用 `?name=quality-admin` 即为质检/监听视角。
 
 ## 实测结论（2026-09-29，仙宫云 RTX 4090D）
 
@@ -59,6 +59,9 @@ cd web && npm install && node server.js
 |---|---|
 | 客户 ↔ AI 文字问答 | ✅ 通过 RPC `ask` 同步返回 |
 | 房间转写广播（坐席旁听） | ✅ topic=`transcript` 自定义文本流 |
+| 人工坐席接管外呼 | ✅ `sendText` 广播，客户与质检同屏实时收到（`evidence/09、10`） |
+| 四参与者同房在线 | ✅ 浏览器成员列表与服务端 `listParticipants` 一致（`evidence/11`） |
+| 接管后 AI 自动静默 | ❌ **未实现**，坐席发言后 AI 仍照常应答 —— 需服务端会话状态位 |
 | 数字人 GPU 推理 | ✅ Wav2LiP 常驻 2532 MiB，环回抓到 7 帧，帧间像素差 5.8–6.8 |
 | 浏览器直连数字人画面 | ❌ 端口代理不转发 UDP，WebRTC 媒体面无路径 |
 | 语音 ASR | ⚠️ 未启用（funasr 未安装） |
@@ -75,6 +78,10 @@ cd web && npm install && node server.js
 5. 房间会残留历史 `agent-*` 僵尸参与者，RPC 打上去会 `Connection timeout`；前端按 `joinedAt` 取最新，服务端用 `deploy/remote/kick-all.sh` 清理。
 6. `livekit-rtc` 这个 PyPI 包名不存在，装 `livekit-agents` 即可。
 7. `livekit-server --dev` 已隐含 `devkey/secret`，再传 `--keys devkey=secret` 会报格式错（需 `key: secret` 带空格）。
+8. 同一 identity 重复 `connect()`（例如脚本里点了两次「加入」）会触发重复身份互踢，先连的那条被静默断开 —— 一个身份只连一次，要多实例就换 identity。
+9. 自己广播的话会在自己的面板里出现两遍（本地 `log()` + 房间回声），transcript handler 里要按 `sender === local.identity` 过滤回声。
+10. 文本流只投递给"当时在房"的成员，**没有历史回放**；后入房的坐席看不到之前的问答。要做旁听/质检就得让坐席常驻房间，或由服务端落库后另走 HTTP 查询。
+11. 自动化测试只能跟住单标签页时，用**同源 iframe** 加载 `?name=xxx` 即可获得真实的第二/第三个 LiveKit 参与者（独立文档、独立连接），比服务器端模拟更接近浏览器现场。
 
 ## License
 

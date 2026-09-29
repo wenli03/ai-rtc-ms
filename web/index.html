@@ -40,6 +40,7 @@
       <button id="join">开始服务</button>
       <button id="send" disabled>发送</button>
     </div>
+    <div style="margin-top:8px;font-size:12px;color:#778" id="modehint"></div>
   </div>
 </div>
 <script src="/node_modules/livekit-client/dist/livekit-client.umd.js"></script>
@@ -51,6 +52,8 @@ const log = (t, cls='sys') => {
 };
 let agentIdentity = null;
 let agentAnnounced = false;
+const ROLE = new URLSearchParams(location.search).get('name') || 'customer';
+const IS_CUSTOMER = ROLE === 'customer';
 const refreshPeers = (room) => {
   const items = [`${room.localParticipant.identity}（我）`];
   for (const p of room.remoteParticipants.values()) items.push(`${p.identity}（${p.name || '远端'}）`);
@@ -64,7 +67,6 @@ const refreshPeers = (room) => {
   }
 };
 let room;
-const ROLE = new URLSearchParams(location.search).get('name') || 'customer';
 document.getElementById('join').textContent = ROLE === 'customer' ? '开始服务' : `以「${ROLE}」加入`;
 document.getElementById('join').onclick = async () => {
   const endpoint = ROLE === 'customer' ? '/start' : '/token?name=' + encodeURIComponent(ROLE);
@@ -72,6 +74,10 @@ document.getElementById('join').onclick = async () => {
   room = new Room({ audioCaptureDefaults: false, videoCaptureDefaults: false });
   room.on(RoomEvent.Connected, () => {
     document.getElementById('status').textContent = `已连接 ${r.room} @ ${r.url}（角色: ${ROLE}）`;
+    if (!IS_CUSTOMER) {
+      document.getElementById('send').disabled = false;
+      document.getElementById('inp').placeholder = `以「${ROLE}」身份对顾客说话，例如：您好，人工客服为您服务`;
+    }
     refreshPeers(room);
   });
   room.on(RoomEvent.ParticipantConnected, () => refreshPeers(room));
@@ -85,14 +91,27 @@ document.getElementById('join').onclick = async () => {
     const raw = await reader.readAll();
     const txt = typeof raw === 'string' ? raw : new TextDecoder().decode(raw);
     const sender = participant ? String(participant.identity) : '';
-    log(txt, sender === String(room.localParticipant.identity) ? 'sys' : 'bot');
+    if (sender === String(room.localParticipant.identity)) return;
+    log(txt, 'bot');
   });
   await room.connect(r.url, r.token);
 };
 const send = async () => {
   const inp = document.getElementById('inp');
   const text = inp.value.trim();
-  if (!text || !room || !agentIdentity) return;
+  if (!text || !room) return;
+  if (!IS_CUSTOMER) {
+    log('我: ' + text, 'me');
+    inp.value = '';
+    try {
+      await room.localParticipant.sendText(`[${ROLE}] ${text}`, { topic: 'transcript', destinationIdentities: [] });
+      log(`已以「${ROLE}」身份广播给房间内所有成员`, 'sys');
+    } catch (e) {
+      log('广播失败: ' + e.message, 'sys');
+    }
+    return;
+  }
+  if (!agentIdentity) { log('AI 客服尚未接入，请稍候', 'sys'); return; }
   log('我: ' + text, 'me');
   inp.value = '';
   document.getElementById('send').disabled = true;
@@ -109,6 +128,9 @@ const send = async () => {
 };
 document.getElementById('send').onclick = send;
 document.getElementById('inp').onkeydown = (e) => { if (e.key === 'Enter') send(); };
+document.getElementById('modehint').textContent = IS_CUSTOMER
+  ? '客户视角：发送 = RPC 提问 AI 客服（question → Ollama → answer + 转写广播）'
+  : `${ROLE} 视角：发送 = sendText 广播（topic=transcript），房间内所有角色实时可见`;
 </script>
 </body>
 </html>
