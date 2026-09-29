@@ -15,8 +15,14 @@ AI 客服 worker ──RPC──────┘        │
 Ollama qwen2.5:3b (:11434)   房间转写广播(topic=transcript)
 
 LiveTalking (:8010) ──/offer WebRTC──→ 数字人音视频流（GPU 推理）
-        └─ /human 文本驱动播报 · /api/admin/sessions 会话观测
+        ├─ /human 文本驱动播报 · /api/admin/sessions 会话观测
+        │       ▲ agent 答完 POST /human（同机，不经浏览器）
+        └─ avatar_bridge.py 同机常驻观看者(recvonly)
+                └→ latest.jpg(≈3fps) ── /avatar.mjpeg ──→ 浏览器 <img>（与聊天同屏，降级通道·无音频）
 ```
+
+> 仙宫云这类"端口代理只给 HTTPS/WSS、不转发 UDP"的环境里，WebRTC 媒体面过不去，
+> 所以上行用 MJPEG 回灌换取"同屏可取证"；生产要实时画面需公网 UDP/TCP、coturn，或把数字人视频回灌进 LiveKit 房间由 SFU 分发。
 
 ## 目录
 
@@ -26,6 +32,9 @@ LiveTalking (:8010) ──/offer WebRTC──→ 数字人音视频流（GPU 推
 | `src/customer2.py` | 服务器端"第二客户"模拟器（自动化只能跟单标签页时用） |
 | `src/probe_broadcast.py` | 转写广播探针，验证 topic 与到达性 |
 | `src/lt_loopback.py` | 服务器环回 WebRTC 客户端，抓数字人真实帧 |
+| `src/avatar_bridge.py` | **常驻**环回观看者：把 LiveTalking 最新帧原子落盘，供 MJPEG 通道投给浏览器 |
+| `src/mouth_seq.py` | 口部 ROI 差分取证：播报前基线 vs 播报期，判断"文字是否真的驱动了口型" |
+| `tools/linkage-test.cjs` | Playwright 同屏取证脚本（浏览器侧 ROI 采样 + 整页截图），`export AICS_BASE=<公网页面地址>` 后运行 |
 | `web/server.js` | token 发放 + 房间/dispatch 创建 + 静态托管(:3210)，按 Host 头推导公网 wss |
 | `web/index.html` | 多角色共用页面，`?name=xxx` 切换身份；**发送按角色分流**：客户 → RPC 问 AI，其他角色 → `sendText` 广播（人工接管外呼 / 质检发言） |
 | `deploy/` | 云主机远程执行器与部署脚本（凭据走环境变量） |
@@ -62,8 +71,9 @@ cd web && npm install && node server.js
 | 人工坐席接管外呼 | ✅ `sendText` 广播，客户与质检同屏实时收到（`evidence/09、10`） |
 | 四参与者同房在线 | ✅ 浏览器成员列表与服务端 `listParticipants` 一致（`evidence/11`） |
 | 接管后 AI 自动静默 | ❌ **未实现**，坐席发言后 AI 仍照常应答 —— 需服务端会话状态位 |
-| 数字人 GPU 推理 | ✅ Wav2LiP 常驻 2532 MiB，环回抓到 7 帧，帧间像素差 5.8–6.8 |
-| 浏览器直连数字人画面 | ❌ 端口代理不转发 UDP，WebRTC 媒体面无路径 |
+| 数字人 GPU 推理 | ✅ Wav2LiP 常驻 2532 MiB（本轮复测 2540 MiB），环回抓到 7 帧，帧间像素差 5.8–6.8 |
+| 数字人 ↔ 文字会话**同屏联动** | ✅ **降级通道**：`avatar_bridge.py` 同机取帧 → `latest.jpg` → `/avatar.mjpeg` → 浏览器 `<img>` 渲染 576×768；文字提问触发 `/human` 后 EdgeTTS 合成 13.8s 语音，口部 ROI 差分 5.31→8.01（**1.51×**），肉眼核对口型随文本张合（`evidence/12_linkage_03`、`12_linkage_05`）。**≈3fps、无音频**，不是实时 WebRTC |
+| 浏览器直连数字人画面 | ❌ 端口代理不转发 UDP，WebRTC 媒体面无路径（故走上行的降级通道） |
 | 语音 ASR | ⚠️ 未启用（funasr 未安装） |
 | AI 首答 / 后续问答延迟 | 约 30s（冷启动加载 3B） / 约 3s |
 
@@ -82,6 +92,10 @@ cd web && npm install && node server.js
 9. 自己广播的话会在自己的面板里出现两遍（本地 `log()` + 房间回声），transcript handler 里要按 `sender === local.identity` 过滤回声。
 10. 文本流只投递给"当时在房"的成员，**没有历史回放**；后入房的坐席看不到之前的问答。要做旁听/质检就得让坐席常驻房间，或由服务端落库后另走 HTTP 查询。
 11. 自动化测试只能跟住单标签页时，用**同源 iframe** 加载 `?name=xxx` 即可获得真实的第二/第三个 LiveKit 参与者（独立文档、独立连接），比服务器端模拟更接近浏览器现场。
+12. `cv2.imwrite` 按**扩展名**选编码器。原子写盘若用 `latest.jpg.tmp` 会抛 `could not find a writer for the specified extension` —— 临时文件也要以 `.jpg` 结尾，再 `os.replace`。
+13. 部分云厂商把大文件放对象存储挂载（如 `/.xgcos/.links/…`）并软链到工作目录，**重启后软链目标变成 `-rw-r--r--`**，直接执行报 `Permission denied`，而且报错只出现在日志里、部署脚本静默继续。二进制要 `cp` 到本地盘再 `chmod +x`；每步起完必须 `ss -tln` 断言端口再进下一步。
+14. **"JPEG 字节数/哈希每帧都不同"不能证明口型在动** —— LiveTalking 的 idle 视频本身就在循环。判据要用口部 ROI 差分 + 亮度，并配肉眼裁切。
+15. 定 ROI 前**先看一张真实帧**：本例 avatar 是 576×768 竖屏，嘴在 y≈0.37；第一版按"下半张脸"取 y∈[0.50,0.85] 打到了裙摆，量化结果前后完全无差异，白跑一轮。
 
 ## License
 

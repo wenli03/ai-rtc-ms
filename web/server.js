@@ -7,6 +7,31 @@ const API_KEY = 'devkey';
 const API_SECRET = 'secret';
 const LK_URL = 'ws://localhost:7880';
 const ROOM = 'cs-demo';
+const AVATAR_FRAME = process.env.AVATAR_FRAME || '/root/aics/frames/latest.jpg';
+
+// 数字人画面降级通道：LiveTalking 的 WebRTC 媒体走 UDP，端口代理不转发 UDP 时浏览器拿不到流，
+// 改由服务器端 avatar_bridge.py 落最新帧，这里以 MJPEG 投给 <img>（帧率受限、无音频）。
+function avatarMjpeg(req, res) {
+  res.writeHead(200, {
+    'Content-Type': 'multipart/x-mixed-replace; boundary=frame',
+    'Cache-Control': 'no-store',
+    'Connection': 'close',
+  });
+  let stopped = false;
+  req.on('close', () => { stopped = true; });
+  const push = () => {
+    if (stopped) return;
+    fs.readFile(AVATAR_FRAME, (err, buf) => {
+      if (stopped) return;
+      res.write('--frame\r\nContent-Type: image/jpeg'
+        + (err ? '' : `\r\nContent-Length: ${buf.length}`) + '\r\n\r\n');
+      if (!err) res.write(buf);
+      res.write('\r\n');
+      setTimeout(push, err ? 1000 : 350);
+    });
+  };
+  push();
+}
 
 // 浏览器端 signaling 地址：本地开发返回 ws://localhost:7880；
 // 仙宫云按 {id}-{端口}.container.x-gpu.com 代理端口，https 页面必须用 wss 子域
@@ -42,6 +67,15 @@ const server = http.createServer(async (req, res) => {
     const token = await tokenFor('customer');
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify({ url: publicLkUrl(req), token, room: ROOM }));
+    return;
+  }
+  if (url.pathname === '/avatar.mjpeg') { avatarMjpeg(req, res); return; }
+  if (url.pathname === '/avatar.jpg') {
+    fs.readFile(AVATAR_FRAME, (err, buf) => {
+      res.setHeader('Content-Type', 'image/jpeg');
+      res.setHeader('Cache-Control', 'no-store');
+      res.end(err ? Buffer.alloc(0) : buf);
+    });
     return;
   }
   if (url.pathname === '/token') {

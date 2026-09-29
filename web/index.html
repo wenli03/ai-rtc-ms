@@ -31,6 +31,9 @@
     <div id="status">未连接</div>
     <h3>房间内成员</h3>
     <ul id="plist"><li>—</li></ul>
+    <h3>数字人画面</h3>
+    <img id="avatar" alt="数字人画面" style="width:100%;border-radius:8px;background:#0b1220;min-height:120px;object-fit:contain" />
+    <p style="font-size:11px;color:#778;margin:6px 0 0">LiveTalking 服务器端取帧 → MJPEG 降级通道：≈3fps、无音频，<b>不是</b> WebRTC 实时流（端口代理不转发 UDP）</p>
     <p style="font-size:12px;color:#778" id="hint">云端 GPU (RTX 4090D)：文字客服链路 ✓；页面地址加 ?name=xxx 可以不同角色身份加入同一房间</p>
   </div>
   <div class="panel chat">
@@ -128,6 +131,19 @@ const send = async () => {
 };
 document.getElementById('send').onclick = send;
 document.getElementById('inp').onkeydown = (e) => { if (e.key === 'Enter') send(); };
+(async () => {
+  const img = document.getElementById('avatar');
+  try {
+    const r = await fetch('/avatar.jpg');
+    if (!r.ok || (r.headers.get('content-length') === '0')) throw new Error('empty');
+    img.src = '/avatar.mjpeg';
+  } catch (e) {
+    img.replaceWith(Object.assign(document.createElement('div'), {
+      textContent: '数字人帧通道未就绪（avatar_bridge.py 未运行或无 latest.jpg）',
+      style: 'font-size:12px;color:#a33;background:#fdecea;padding:8px;border-radius:8px',
+    }));
+  }
+})();
 document.getElementById('modehint').textContent = IS_CUSTOMER
   ? '客户视角：发送 = RPC 提问 AI 客服（question → Ollama → answer + 转写广播）'
   : `${ROLE} 视角：发送 = sendText 广播（topic=transcript），房间内所有角色实时可见`;

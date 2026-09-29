@@ -1,0 +1,382 @@
+{
+  "问题": "请详细说明你们的退换货政策、运费由谁承担、多久能处理完",
+  "AI首帧回答耗时s": 0.8,
+  "画面来源": "LiveTalking(GPU) → aiortc 环回观看者 avatar_bridge.py → latest.jpg → web/server.js MJPEG → 浏览器 <img>",
+  "浏览器内画面分辨率": {
+    "w": 576,
+    "h": 768,
+    "complete": true,
+    "src": "/avatar.mjpeg"
+  },
+  "静默期": {
+    "samples": 14,
+    "roi_mean_avg": 147.34,
+    "roi_std_avg": 19.52,
+    "roi_mean_range": 3.43,
+    "dark_ratio_range": 0.0013,
+    "mean_abs_frame_delta": 0.473,
+    "mean_abs_dark_delta": 0.00031,
+    "rows": [
+      {
+        "i": 1,
+        "ts": 1790652027395,
+        "mean": 147.45,
+        "std": 19.14,
+        "darkRatio": 0.0006,
+        "jpgBytes": 58678
+      },
+      {
+        "i": 2,
+        "ts": 1790652028347,
+        "mean": 147.41,
+        "std": 18.98,
+        "darkRatio": 0.0008,
+        "jpgBytes": 57735
+      },
+      {
+        "i": 3,
+        "ts": 1790652029170,
+        "mean": 146.83,
+        "std": 20.24,
+        "darkRatio": 0.0007,
+        "jpgBytes": 60922
+      },
+      {
+        "i": 4,
+        "ts": 1790652030032,
+        "mean": 147.06,
+        "std": 20.38,
+        "darkRatio": 0.0006,
+        "jpgBytes": 60593
+      },
+      {
+        "i": 5,
+        "ts": 1790652030848,
+        "mean": 147.04,
+        "std": 20.25,
+        "darkRatio": 0.0005,
+        "jpgBytes": 60779
+      },
+      {
+        "i": 6,
+        "ts": 1790652031671,
+        "mean": 147.02,
+        "std": 20.38,
+        "darkRatio": 0.0006,
+        "jpgBytes": 59779
+      },
+      {
+        "i": 7,
+        "ts": 1790652032491,
+        "mean": 146.62,
+        "std": 18.71,
+        "darkRatio": 0.0001,
+        "jpgBytes": 58083
+      },
+      {
+        "i": 8,
+        "ts": 1790652033307,
+        "mean": 147.24,
+        "std": 19.47,
+        "darkRatio": 0.0004,
+        "jpgBytes": 58608
+      },
+      {
+        "i": 9,
+        "ts": 1790652034132,
+        "mean": 147.02,
+        "std": 19.05,
+        "darkRatio": 0.0006,
+        "jpgBytes": 58449
+      },
+      {
+        "i": 10,
+        "ts": 1790652034919,
+        "mean": 147.01,
+        "std": 19.09,
+        "darkRatio": 0.0006,
+        "jpgBytes": 58613
+      },
+      {
+        "i": 11,
+        "ts": 1790652035728,
+        "mean": 147.01,
+        "std": 19.38,
+        "darkRatio": 0.0004,
+        "jpgBytes": 56679
+      },
+      {
+        "i": 12,
+        "ts": 1790652036530,
+        "mean": 146.44,
+        "std": 17.49,
+        "darkRatio": 0,
+        "jpgBytes": 59130
+      },
+      {
+        "i": 13,
+        "ts": 1790652037376,
+        "mean": 148.81,
+        "std": 20.66,
+        "darkRatio": 0.0013,
+        "jpgBytes": 59193
+      },
+      {
+        "i": 14,
+        "ts": 1790652038224,
+        "mean": 149.87,
+        "std": 20.11,
+        "darkRatio": 0.0008,
+        "jpgBytes": 59733
+      }
+    ]
+  },
+  "播报期": {
+    "samples": 14,
+    "roi_mean_avg": 147.55,
+    "roi_std_avg": 19.88,
+    "roi_mean_range": 3.34,
+    "dark_ratio_range": 0.0011,
+    "mean_abs_frame_delta": 0.446,
+    "mean_abs_dark_delta": 0.0002,
+    "rows": [
+      {
+        "i": 1,
+        "ts": 1790652040974,
+        "mean": 148.43,
+        "std": 20.75,
+        "darkRatio": 0.0012,
+        "jpgBytes": 59446
+      },
+      {
+        "i": 2,
+        "ts": 1790652041770,
+        "mean": 149.84,
+        "std": 20.3,
+        "darkRatio": 0.0008,
+        "jpgBytes": 59703
+      },
+      {
+        "i": 3,
+        "ts": 1790652042581,
+        "mean": 149.62,
+        "std": 20.07,
+        "darkRatio": 0.0008,
+        "jpgBytes": 59553
+      },
+      {
+        "i": 4,
+        "ts": 1790652043401,
+        "mean": 148.82,
+        "std": 20.62,
+        "darkRatio": 0.0011,
+        "jpgBytes": 58733
+      },
+      {
+        "i": 5,
+        "ts": 1790652044228,
+        "mean": 146.5,
+        "std": 17.42,
+        "darkRatio": 0.0001,
+        "jpgBytes": 58071
+      },
+      {
+        "i": 6,
+        "ts": 1790652045047,
+        "mean": 146.81,
+        "std": 19.41,
+        "darkRatio": 0.0005,
+        "jpgBytes": 59013
+      },
+      {
+        "i": 7,
+        "ts": 1790652045873,
+        "mean": 146.87,
+        "std": 19.22,
+        "darkRatio": 0.0005,
+        "jpgBytes": 58530
+      },
+      {
+        "i": 8,
+        "ts": 1790652046715,
+        "mean": 146.98,
+        "std": 19.35,
+        "darkRatio": 0.0006,
+        "jpgBytes": 58438
+      },
+      {
+        "i": 9,
+        "ts": 1790652047603,
+        "mean": 147,
+        "std": 19.77,
+        "darkRatio": 0.0005,
+        "jpgBytes": 55822
+      },
+      {
+        "i": 10,
+        "ts": 1790652048441,
+        "mean": 146.96,
+        "std": 19.89,
+        "darkRatio": 0.0006,
+        "jpgBytes": 60499
+      },
+      {
+        "i": 11,
+        "ts": 1790652049257,
+        "mean": 146.95,
+        "std": 20.38,
+        "darkRatio": 0.0006,
+        "jpgBytes": 60176
+      },
+      {
+        "i": 12,
+        "ts": 1790652050081,
+        "mean": 147.05,
+        "std": 20.33,
+        "darkRatio": 0.0006,
+        "jpgBytes": 60421
+      },
+      {
+        "i": 13,
+        "ts": 1790652050901,
+        "mean": 147.12,
+        "std": 20.35,
+        "darkRatio": 0.0007,
+        "jpgBytes": 60192
+      },
+      {
+        "i": 14,
+        "ts": 1790652051798,
+        "mean": 146.8,
+        "std": 20.41,
+        "darkRatio": 0.0006,
+        "jpgBytes": 57064
+      }
+    ]
+  },
+  "播报后静默期": {
+    "samples": 14,
+    "roi_mean_avg": 147.51,
+    "roi_std_avg": 18.92,
+    "roi_mean_range": 3.42,
+    "dark_ratio_range": 0.0008,
+    "mean_abs_frame_delta": 0.762,
+    "mean_abs_dark_delta": 0.00015,
+    "rows": [
+      {
+        "i": 1,
+        "ts": 1790652060199,
+        "mean": 146.77,
+        "std": 18.46,
+        "darkRatio": 0.0001,
+        "jpgBytes": 56824
+      },
+      {
+        "i": 2,
+        "ts": 1790652061010,
+        "mean": 148.77,
+        "std": 18.86,
+        "darkRatio": 0.0002,
+        "jpgBytes": 58236
+      },
+      {
+        "i": 3,
+        "ts": 1790652061829,
+        "mean": 149.35,
+        "std": 19.19,
+        "darkRatio": 0.0002,
+        "jpgBytes": 57744
+      },
+      {
+        "i": 4,
+        "ts": 1790652062662,
+        "mean": 149.16,
+        "std": 19.09,
+        "darkRatio": 0.0002,
+        "jpgBytes": 58488
+      },
+      {
+        "i": 5,
+        "ts": 1790652063494,
+        "mean": 148.11,
+        "std": 19.12,
+        "darkRatio": 0.0002,
+        "jpgBytes": 56450
+      },
+      {
+        "i": 6,
+        "ts": 1790652064330,
+        "mean": 148.6,
+        "std": 18.12,
+        "darkRatio": 0.0001,
+        "jpgBytes": 57128
+      },
+      {
+        "i": 7,
+        "ts": 1790652065174,
+        "mean": 145.93,
+        "std": 18.88,
+        "darkRatio": 0.0002,
+        "jpgBytes": 59845
+      },
+      {
+        "i": 8,
+        "ts": 1790652066045,
+        "mean": 146.61,
+        "std": 18.74,
+        "darkRatio": 0.0005,
+        "jpgBytes": 59925
+      },
+      {
+        "i": 9,
+        "ts": 1790652066938,
+        "mean": 146.5,
+        "std": 18.9,
+        "darkRatio": 0.0004,
+        "jpgBytes": 60026
+      },
+      {
+        "i": 10,
+        "ts": 1790652067761,
+        "mean": 146.33,
+        "std": 19.02,
+        "darkRatio": 0.0005,
+        "jpgBytes": 59411
+      },
+      {
+        "i": 11,
+        "ts": 1790652068635,
+        "mean": 146.22,
+        "std": 19.18,
+        "darkRatio": 0.0005,
+        "jpgBytes": 57683
+      },
+      {
+        "i": 12,
+        "ts": 1790652069445,
+        "mean": 147.25,
+        "std": 19.27,
+        "darkRatio": 0.0009,
+        "jpgBytes": 57547
+      },
+      {
+        "i": 13,
+        "ts": 1790652070277,
+        "mean": 147.88,
+        "std": 18.89,
+        "darkRatio": 0.0004,
+        "jpgBytes": 57699
+      },
+      {
+        "i": 14,
+        "ts": 1790652071075,
+        "mean": 147.68,
+        "std": 19.11,
+        "darkRatio": 0.0006,
+        "jpgBytes": 57960
+      }
+    ]
+  },
+  "房间成员": "customer（我）\nagent-AJ_XMHeqfKD7WCS（AI客服）",
+  "页面报错": []
+}
