@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>AI 视频客服 Demo — LiveKit Agents</title>
+<style>
+  body { font-family: "Microsoft YaHei", sans-serif; margin: 0; background: #f3f5f8; }
+  header { background: #123c6b; color: #fff; padding: 14px 22px; font-size: 18px; }
+  header small { opacity: .7; margin-left: 10px; }
+  .wrap { display: flex; gap: 16px; padding: 16px 22px; max-width: 1100px; }
+  .panel { background: #fff; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.08); padding: 14px; }
+  .side { width: 260px; }
+  .chat { flex: 1; display: flex; flex-direction: column; min-height: 520px; }
+  #log { flex: 1; overflow-y: auto; border: 1px solid #e5e9f0; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
+  .msg { margin: 6px 0; padding: 8px 12px; border-radius: 8px; max-width: 80%; white-space: pre-wrap; }
+  .me { background: #d6ebff; margin-left: auto; }
+  .bot { background: #eef1f5; }
+  .sys { color: #888; font-size: 12px; text-align: center; }
+  input[type=text] { flex: 1; padding: 10px; border: 1px solid #cfd6e0; border-radius: 8px; font-size: 14px; }
+  button { padding: 10px 18px; border: none; border-radius: 8px; background: #123c6b; color: #fff; font-size: 14px; cursor: pointer; }
+  button:disabled { background: #9fb0c3; cursor: default; }
+  #status { font-size: 13px; color: #456; }
+  ul#plist { padding-left: 18px; font-size: 14px; }
+</style>
+</head>
+<body>
+<header>AI 视频客服 Demo<small>LiveKit Server + LiveKit Agents + 本地 Ollama LLM (qwen2.5:3b)</small></header>
+<div class="wrap">
+  <div class="panel side">
+    <h3 style="margin-top:0">会话状态</h3>
+    <div id="status">未连接</div>
+    <h3>房间内成员</h3>
+    <ul id="plist"><li>—</li></ul>
+    <p style="font-size:12px;color:#778" id="hint">云端 GPU (RTX 4090D)：文字客服链路 ✓；页面地址加 ?name=xxx 可以不同角色身份加入同一房间</p>
+  </div>
+  <div class="panel chat">
+    <div id="log"><div class="sys">点击"开始服务"接入 AI 客服</div></div>
+    <div style="display:flex;gap:8px">
+      <input type="text" id="inp" placeholder="输入问题，例如：你们的退款政策是什么？" />
+      <button id="join">开始服务</button>
+      <button id="send" disabled>发送</button>
+    </div>
+  </div>
+</div>
+<script src="/node_modules/livekit-client/dist/livekit-client.umd.js"></script>
+<script>
+const { Room, RoomEvent } = LivekitClient;
+const log = (t, cls='sys') => {
+  const d = document.createElement('div'); d.className = 'msg ' + cls; d.textContent = t;
+  document.getElementById('log').appendChild(d); d.scrollIntoView();
+};
+let agentIdentity = null;
+let agentAnnounced = false;
+const refreshPeers = (room) => {
+  const items = [`${room.localParticipant.identity}（我）`];
+  for (const p of room.remoteParticipants.values()) items.push(`${p.identity}（${p.name || '远端'}）`);
+  document.getElementById('plist').innerHTML = items.map(n => `<li>${n}</li>`).join('');
+  const agents = [...room.remoteParticipants.values()].filter(p => String(p.identity).startsWith('agent-'));
+  if (agents.length) {
+    agents.sort((a, b) => (a.joinedAt?.getTime() || 0) - (b.joinedAt?.getTime() || 0));
+    agentIdentity = agents[agents.length - 1].identity;
+    document.getElementById('send').disabled = false;
+    if (!agentAnnounced) { agentAnnounced = true; log('客服已接入，可以提问了', 'sys'); }
+  }
+};
+let room;
+const ROLE = new URLSearchParams(location.search).get('name') || 'customer';
+document.getElementById('join').textContent = ROLE === 'customer' ? '开始服务' : `以「${ROLE}」加入`;
+document.getElementById('join').onclick = async () => {
+  const endpoint = ROLE === 'customer' ? '/start' : '/token?name=' + encodeURIComponent(ROLE);
+  const r = await (await fetch(endpoint)).json();
+  room = new Room({ audioCaptureDefaults: false, videoCaptureDefaults: false });
+  room.on(RoomEvent.Connected, () => {
+    document.getElementById('status').textContent = `已连接 ${r.room} @ ${r.url}（角色: ${ROLE}）`;
+    refreshPeers(room);
+  });
+  room.on(RoomEvent.ParticipantConnected, () => refreshPeers(room));
+  room.on(RoomEvent.ParticipantDisconnected, () => refreshPeers(room));
+  room.on(RoomEvent.ChatMessage, (msg) => {
+    const txt = String(msg.message || '');
+    const sender = msg.sender ? String(msg.sender.identity) : '';
+    if (sender !== String(room.localParticipant.identity)) log(txt, 'bot');
+  });
+  room.registerTextStreamHandler('transcript', async (reader, participant) => {
+    const raw = await reader.readAll();
+    const txt = typeof raw === 'string' ? raw : new TextDecoder().decode(raw);
+    const sender = participant ? String(participant.identity) : '';
+    log(txt, sender === String(room.localParticipant.identity) ? 'sys' : 'bot');
+  });
+  await room.connect(r.url, r.token);
+};
+const send = async () => {
+  const inp = document.getElementById('inp');
+  const text = inp.value.trim();
+  if (!text || !room || !agentIdentity) return;
+  log('我: ' + text, 'me');
+  inp.value = '';
+  document.getElementById('send').disabled = true;
+  try {
+    const reply = await room.localParticipant.performRpc({
+      destinationIdentity: agentIdentity, method: 'ask', payload: text, responseTimeout: 120000,
+    });
+    log('AI客服: ' + reply, 'bot');
+  } catch (e) {
+    log('调用失败: ' + e.message, 'sys');
+  } finally {
+    document.getElementById('send').disabled = false;
+  }
+};
+document.getElementById('send').onclick = send;
+document.getElementById('inp').onkeydown = (e) => { if (e.key === 'Enter') send(); };
+</script>
+</body>
+</html>

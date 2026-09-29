@@ -1,0 +1,20 @@
+node_modules/
+venv/
+__pycache__/
+*.pyc
+
+# 二进制与归档
+bin/
+*.zip
+*.tar.gz
+*.tgz
+
+# 日志与本地状态
+*.log
+ssh-log.txt
+deploy/ssh-log.txt
+
+# 凭据
+.env
+*.pem
+id_rsa*
